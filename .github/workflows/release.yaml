@@ -1,0 +1,119 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: "Component to release (kubernetes, eksd, containerd, crio, k3s, cni-plugins)"
+        required: true
+      version:
+        description: "Version to release (e.g. v1.33.1)"
+        required: true
+  schedule:
+    # Daily at 06:00 UTC — checks for new upstream versions.
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  REPOSITORY: ${{ github.repository_owner }}/k8s-sysext
+  GO_VERSION: "1.26.3"
+  GO_SDK: "/home/runner/sdk/go1.26.3"
+
+jobs:
+  # ── manual single-component release ──────────────────────────────────────
+  release-one:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build k8s-sysext
+        run: |
+          GOROOT="${GOROOT}" GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
+        env:
+          GOROOT: ${{ env.GO_SDK }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release ${{ inputs.component }} ${{ inputs.version }}
+        run: |
+          ./k8s-sysext release \
+            --registry "$REGISTRY" \
+            --repository "$REPOSITORY" \
+            --skip-existing \
+            "${{ inputs.component }}" "${{ inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+
+  # ── scheduled: release all components with new upstream versions ──────────
+  release-all:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [kubernetes, eksd, containerd, crio, k3s, cni-plugins]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build k8s-sysext
+        run: |
+          GOROOT="${GOROOT}" GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
+        env:
+          GOROOT: ${{ env.GO_SDK }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List latest versions for ${{ matrix.component }}
+        id: versions
+        run: |
+          VERSIONS=$(./k8s-sysext list "${{ matrix.component }}" \
+            --registry "$REGISTRY" --repository "$REPOSITORY" | head -5)
+          echo "versions<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$VERSIONS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+
+      - name: Release new versions
+        run: |
+          while IFS= read -r VERSION; do
+            [[ -z "$VERSION" ]] && continue
+            echo "releasing ${{ matrix.component }} $VERSION"
+            ./k8s-sysext release \
+              --registry "$REGISTRY" \
+              --repository "$REPOSITORY" \
+              --skip-existing \
+              "${{ matrix.component }}" "$VERSION" || true
+          done <<< "${{ steps.versions.outputs.versions }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ env.REPOSITORY }}

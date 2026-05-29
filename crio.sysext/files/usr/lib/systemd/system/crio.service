@@ -1,0 +1,19 @@
+[Unit]
+Description=CRI-O container runtime
+Documentation=https://github.com/cri-o/cri-o
+After=network.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/crio
+Restart=on-failure
+RestartSec=5
+Delegate=yes
+KillMode=process
+OOMScoreAdjust=-999
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

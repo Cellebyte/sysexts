@@ -1,0 +1,10 @@
+version = 3
+
+[plugins.'io.containerd.cri.v1.runtime']
+  sandbox_image = "registry.k8s.io/pause:3.10"
+
+  [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc]
+    runtime_type = "io.containerd.runc.v2"
+
+    [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]
+      SystemdCgroup = true
