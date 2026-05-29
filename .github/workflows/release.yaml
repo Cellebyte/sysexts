@@ -21,7 +21,6 @@ env:
   REGISTRY: ghcr.io
   REPOSITORY: ${{ github.repository_owner }}/k8s-sysext
   GO_VERSION: "1.26.3"
-  GO_SDK: "/home/runner/sdk/go1.26.3"
 
 jobs:
   # ── manual single-component release ──────────────────────────────────────
@@ -37,10 +36,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Build k8s-sysext
-        run: |
-          GOROOT="${GOROOT}" GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
-        env:
-          GOROOT: ${{ env.GO_SDK }}
+        run: GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -78,10 +74,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Build k8s-sysext
-        run: |
-          GOROOT="${GOROOT}" GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
-        env:
-          GOROOT: ${{ env.GO_SDK }}
+        run: GOTOOLCHAIN=local go build -o ./k8s-sysext ./cmd/k8s-sysext
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
