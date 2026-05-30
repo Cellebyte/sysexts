@@ -20,6 +20,7 @@ import (
 // stagingDir, mirroring the final /usr/bin/ layout.
 func FetchKubernetes(ctx context.Context, version, arch, stagingDir string) error {
 	relArch := toReleaseArch(arch) // x86-64 → amd64
+	ver := strings.TrimPrefix(version, "v")
 	binDir := filepath.Join(stagingDir, "usr", "bin")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
 		return err
@@ -27,7 +28,7 @@ func FetchKubernetes(ctx context.Context, version, arch, stagingDir string) erro
 
 	// kubelet, kubeadm, kubectl
 	for _, bin := range []string{"kubelet", "kubeadm", "kubectl"} {
-		url := fmt.Sprintf("https://dl.k8s.io/%s/bin/linux/%s/%s", version, relArch, bin)
+		url := fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/%s/%s", ver, relArch, bin)
 		dest := filepath.Join(binDir, bin)
 		if err := downloadFile(ctx, url, dest, "", 0755); err != nil {
 			return fmt.Errorf("download %s: %w", bin, err)
@@ -107,6 +108,9 @@ func FetchEKSD(ctx context.Context, version, arch, stagingDir string) error {
 // binary pinned by that containerd release.
 func FetchContainerd(ctx context.Context, version, arch, stagingDir string) error {
 	relArch := toReleaseArch(arch)
+	// ListContainerdVersions returns tags with a "v" prefix; strip it so the
+	// URL does not become "vv2.3.1".
+	ver := strings.TrimPrefix(version, "v")
 	binDir := filepath.Join(stagingDir, "usr", "bin")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
 		return err
@@ -115,7 +119,7 @@ func FetchContainerd(ctx context.Context, version, arch, stagingDir string) erro
 	// containerd static tarball
 	tarURL := fmt.Sprintf(
 		"https://github.com/containerd/containerd/releases/download/v%s/containerd-static-%s-linux-%s.tar.gz",
-		version, version, relArch,
+		ver, ver, relArch,
 	)
 	sha256URL := tarURL + ".sha256sum"
 
@@ -138,7 +142,7 @@ func FetchContainerd(ctx context.Context, version, arch, stagingDir string) erro
 	// runc — version pinned inside the containerd source tree
 	runcVersionURL := fmt.Sprintf(
 		"https://raw.githubusercontent.com/containerd/containerd/refs/tags/v%s/script/setup/runc-version",
-		version,
+		ver,
 	)
 	runcVersion, err := fetchTextContent(ctx, runcVersionURL)
 	if err != nil {
@@ -173,13 +177,11 @@ func FetchContainerd(ctx context.Context, version, arch, stagingDir string) erro
 // FetchCRIO downloads the CRI-O static bundle for the given version.
 func FetchCRIO(ctx context.Context, version, arch, stagingDir string) error {
 	relArch := toReleaseArch(arch)
-	// ListCRIOVersions returns tags with a "v" prefix; strip it so the URL
-	// does not become "vv1.35.3".
-	version = strings.TrimPrefix(version, "v")
+	ver := strings.TrimPrefix(version, "v")
 
 	tarURL := fmt.Sprintf(
 		"https://storage.googleapis.com/cri-o/artifacts/cri-o.%s.v%s.tar.gz",
-		relArch, version,
+		relArch, ver,
 	)
 	sha256URL := tarURL + ".sha256sum"
 
@@ -228,6 +230,7 @@ func FetchCRIO(ctx context.Context, version, arch, stagingDir string) error {
 // FetchK3s downloads the single k3s binary and creates the standard symlinks.
 func FetchK3s(ctx context.Context, version, arch, stagingDir string) error {
 	relArch := toReleaseArch(arch)
+	ver := strings.TrimPrefix(version, "v")
 
 	// k3s uses a different binary name for arm64
 	binName := "k3s"
@@ -236,10 +239,10 @@ func FetchK3s(ctx context.Context, version, arch, stagingDir string) error {
 	}
 
 	// k3s version tags use "+" which must be URL-encoded as "%2B"
-	encodedVersion := strings.ReplaceAll(version, "+", "%2B")
+	encodedVer := strings.ReplaceAll(ver, "+", "%2B")
 	url := fmt.Sprintf(
-		"https://github.com/k3s-io/k3s/releases/download/%s/%s",
-		encodedVersion, binName,
+		"https://github.com/k3s-io/k3s/releases/download/v%s/%s",
+		encodedVer, binName,
 	)
 
 	localBinDir := filepath.Join(stagingDir, "usr", "local", "bin")
@@ -270,18 +273,19 @@ func FetchK3s(ctx context.Context, version, arch, stagingDir string) error {
 // binaries at opt/cni/bin/ — which sysext merges directly to /opt/cni/bin/.
 func FetchCNIPlugins(ctx context.Context, version, arch, stagingDir string) error {
 	relArch := toReleaseArch(arch)
+	ver := strings.TrimPrefix(version, "v")
 	destDir := filepath.Join(stagingDir, "opt", "cni", "bin")
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return err
 	}
 
 	url := fmt.Sprintf(
-		"https://github.com/containernetworking/plugins/releases/download/%s/cni-plugins-linux-%s-%s.tgz",
-		version, relArch, version,
+		"https://github.com/containernetworking/plugins/releases/download/v%s/cni-plugins-linux-%s-v%s.tgz",
+		ver, relArch, ver,
 	)
 	sha256URL := fmt.Sprintf(
-		"https://github.com/containernetworking/plugins/releases/download/%s/cni-plugins-linux-%s-%s.tgz.sha256",
-		version, relArch, version,
+		"https://github.com/containernetworking/plugins/releases/download/v%s/cni-plugins-linux-%s-v%s.tgz.sha256",
+		ver, relArch, ver,
 	)
 
 	expectedHash, err := fetchTextContent(ctx, sha256URL)
@@ -452,9 +456,10 @@ func extractTar(tarGz, destDir, stripPrefix string) error {
 
 // fetchCrictl downloads the crictl binary for the given version + arch.
 func fetchCrictl(ctx context.Context, version, relArch, destDir string) error {
+	ver := strings.TrimPrefix(version, "v")
 	url := fmt.Sprintf(
-		"https://github.com/kubernetes-sigs/cri-tools/releases/download/%s/crictl-%s-linux-%s.tar.gz",
-		version, version, relArch,
+		"https://github.com/kubernetes-sigs/cri-tools/releases/download/v%s/crictl-v%s-linux-%s.tar.gz",
+		ver, ver, relArch,
 	)
 	tmpTar := filepath.Join(destDir, "crictl.tar.gz")
 	if err := downloadFile(ctx, url, tmpTar, "", 0644); err != nil {
