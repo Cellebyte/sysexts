@@ -59,7 +59,7 @@ var Registry = map[string]*Component{
 		Conflicts:      []string{"eksd", "k3s"},
 		ListVersions:   ListKubernetesVersions,
 		Fetch:          FetchKubernetes,
-		StaticFilesDir: "kubernetes.sysext/files",
+		StaticFilesDir: "files/kubernetes",
 	},
 	"eksd": {
 		Name:           "eksd",
@@ -67,7 +67,7 @@ var Registry = map[string]*Component{
 		Conflicts:      []string{"kubernetes", "k3s"},
 		ListVersions:   ListEKSDVersions,
 		Fetch:          FetchEKSD,
-		StaticFilesDir: "eksd.sysext/files",
+		StaticFilesDir: "files/eksd",
 	},
 	"containerd": {
 		Name:           "containerd",
@@ -76,7 +76,7 @@ var Registry = map[string]*Component{
 		CRISocket:      "/run/containerd/containerd.sock",
 		ListVersions:   ListContainerdVersions,
 		Fetch:          FetchContainerd,
-		StaticFilesDir: "containerd.sysext/files",
+		StaticFilesDir: "files/containerd",
 	},
 	"crio": {
 		Name:           "crio",
@@ -85,7 +85,7 @@ var Registry = map[string]*Component{
 		CRISocket:      "/var/run/crio/crio.sock",
 		ListVersions:   ListCRIOVersions,
 		Fetch:          FetchCRIO,
-		StaticFilesDir: "crio.sysext/files",
+		StaticFilesDir: "files/crio",
 	},
 	"k3s": {
 		Name:           "k3s",
@@ -94,7 +94,7 @@ var Registry = map[string]*Component{
 		CRISocket:      "/run/k3s/containerd/containerd.sock",
 		ListVersions:   ListK3sVersions,
 		Fetch:          FetchK3s,
-		StaticFilesDir: "k3s.sysext/files",
+		StaticFilesDir: "files/k3s",
 	},
 	"cni-plugins": {
 		Name:           "cni-plugins",

@@ -25,8 +25,6 @@ type k8sSchedule struct {
 	} `yaml:"schedules"`
 }
 
-const k8sScheduleURL = "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml"
-
 // ListKubernetesVersions returns all known patch releases, newest first.
 func ListKubernetesVersions(ctx context.Context) ([]string, error) {
 	return fetchK8sVersions(ctx, false)
@@ -38,7 +36,7 @@ func LatestKubernetesVersions(ctx context.Context) ([]string, error) {
 }
 
 func fetchK8sVersions(ctx context.Context, latestOnly bool) ([]string, error) {
-	data, err := httpGet(ctx, k8sScheduleURL)
+	data, err := httpGet(ctx, urlK8sSchedule)
 	if err != nil {
 		return nil, fmt.Errorf("fetch k8s schedule: %w", err)
 	}
@@ -71,22 +69,18 @@ func fetchK8sVersions(ctx context.Context, latestOnly bool) ([]string, error) {
 
 // ---- EKS Distro ---------------------------------------------------------
 
-const eksdReleasesURL = "https://api.github.com/repos/aws/eks-distro/releases"
-
 // ListEKSDVersions returns available EKS-D releases, newest first.
 // The tag format is "kubernetes-1-NN-eks-M"; we expose them as-is.
 func ListEKSDVersions(ctx context.Context) ([]string, error) {
-	return listGitHubReleases(ctx, eksdReleasesURL)
+	return listGitHubReleases(ctx, urlEKSDReleasesAPI)
 }
 
 // ---- containerd ---------------------------------------------------------
 
-const containerdReleasesURL = "https://api.github.com/repos/containerd/containerd/releases"
-
 // ListContainerdVersions returns available containerd releases, newest first.
 // Strips the leading "v" to match the download URL pattern.
 func ListContainerdVersions(ctx context.Context) ([]string, error) {
-	tags, err := listGitHubReleases(ctx, containerdReleasesURL)
+	tags, err := listGitHubReleases(ctx, urlContainerdReleasesAPI)
 	if err != nil {
 		return nil, err
 	}
@@ -102,29 +96,23 @@ func ListContainerdVersions(ctx context.Context) ([]string, error) {
 
 // ---- CRI-O --------------------------------------------------------------
 
-const crioReleasesURL = "https://api.github.com/repos/cri-o/cri-o/releases"
-
 // ListCRIOVersions returns available CRI-O releases, newest first.
 func ListCRIOVersions(ctx context.Context) ([]string, error) {
-	return listGitHubReleases(ctx, crioReleasesURL)
+	return listGitHubReleases(ctx, urlCRIOReleasesAPI)
 }
 
 // ---- k3s ----------------------------------------------------------------
 
-const k3sReleasesURL = "https://api.github.com/repos/k3s-io/k3s/releases"
-
 // ListK3sVersions returns available k3s releases, newest first.
 func ListK3sVersions(ctx context.Context) ([]string, error) {
-	return listGitHubReleases(ctx, k3sReleasesURL)
+	return listGitHubReleases(ctx, urlK3sReleasesAPI)
 }
 
 // ---- CNI plugins --------------------------------------------------------
 
-const cniReleasesURL = "https://api.github.com/repos/containernetworking/plugins/releases"
-
 // ListCNIPluginsVersions returns available CNI plugin releases, newest first.
 func ListCNIPluginsVersions(ctx context.Context) ([]string, error) {
-	return listGitHubReleases(ctx, cniReleasesURL)
+	return listGitHubReleases(ctx, urlCNIReleasesAPI)
 }
 
 // ---- helpers ------------------------------------------------------------
