@@ -54,6 +54,7 @@ func rootCmd() *cobra.Command {
 
 	root.AddCommand(
 		listCmd(),
+		tagsCmd(gf),
 		buildCmd(gf),
 		pushCmd(gf),
 		releaseCmd(gf),
@@ -103,6 +104,36 @@ func listOne(ctx context.Context, name string) error {
 		fmt.Println(v)
 	}
 	return nil
+}
+
+// ── tags ──────────────────────────────────────────────────────────────────────
+
+func tagsCmd(gf *globalFlags) *cobra.Command {
+	return &cobra.Command{
+		Use:   "tags <component>",
+		Short: "List full-version tags published in the OCI registry",
+		Long: `List all immutable full-version tags currently published in the OCI
+registry for a component (e.g. "v1.33.1", "v1-35-eks-9").
+
+Minor-alias tags (e.g. "v1.33") are excluded. Prints one tag per line.
+Exits non-zero if the component has no published tags.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			component := args[0]
+			if _, err := internal.Get(component); err != nil {
+				return err
+			}
+			cfg := gf.ociConfig()
+			tags, err := internal.ListPublishedTags(cmd.Context(), cfg, component)
+			if err != nil {
+				return err
+			}
+			for _, t := range tags {
+				fmt.Println(t)
+			}
+			return nil
+		},
+	}
 }
 
 // ── build ─────────────────────────────────────────────────────────────────────

@@ -189,6 +189,50 @@ func IndexTags(version string) []string {
 	return []string{version, minor}
 }
 
+// ListPublishedTags returns all full-version tags currently published in the
+// OCI registry for the given component.
+//
+// Minor-alias tags (e.g. "v1.33") are excluded; only immutable full-version
+// tags (e.g. "v1.33.1", "v1.36.1+k3s1", "v1-35-eks-9") are returned.
+// Returns an error if the repository does not exist or has no published tags.
+func ListPublishedTags(ctx context.Context, cfg OCIConfig, component string) ([]string, error) {
+	repo, err := cfg.newRepo(component)
+	if err != nil {
+		return nil, err
+	}
+
+	var all []string
+	if err := repo.Tags(ctx, "", func(tags []string) error {
+		for _, t := range tags {
+			if isFullVersionTag(t) {
+				all = append(all, t)
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("list tags for %s: %w", component, err)
+	}
+
+	if len(all) == 0 {
+		return nil, fmt.Errorf("no published tags found for %s", component)
+	}
+	return all, nil
+}
+
+// isFullVersionTag reports whether tag is an immutable full-version tag
+// (as opposed to a mutable minor-alias tag like "v1.33").
+//
+// A tag is considered a full version if:
+//   - it contains at least two dots  →  "v1.33.1", "v2.3.1", "v1.36.1+k3s1"
+//   - OR it is a valid EKS-D tag    →  "v1-35-eks-9"
+func isFullVersionTag(tag string) bool {
+	if strings.Count(tag, ".") >= 2 {
+		return true
+	}
+	_, _, err := parseEKSDTag(tag)
+	return err == nil
+}
+
 // isNotFound reports whether err represents an HTTP 404 / not-found response.
 func isNotFound(err error) bool {
 	if err == nil {

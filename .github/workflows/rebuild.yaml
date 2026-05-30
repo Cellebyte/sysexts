@@ -1,0 +1,107 @@
+name: rebuild
+
+on:
+  push:
+    branches: [main]
+    paths: ["files/**"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  GO_VERSION: "1.26.3"
+
+jobs:
+  # Detect which components have changed files and emit a JSON array for the
+  # matrix in the rebuild job.
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.detect.outputs.components }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed components
+        id: detect
+        run: |
+          # Ignore the very first push to main (before SHA is all zeros).
+          if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "components=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          COMPONENTS=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
+            | grep '^files/' \
+            | cut -d'/' -f2 \
+            | sort -u \
+            | jq -Rsc 'split("\n") | map(select(length > 0))')
+
+          echo "components=${COMPONENTS}" >> "$GITHUB_OUTPUT"
+
+  # Rebuild and re-push every already-published version for each changed
+  # component.  Runs without --skip-existing so the new static files are
+  # picked up even for versions already in the registry.
+  rebuild:
+    needs: detect
+    if: needs.detect.outputs.components != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJson(needs.detect.outputs.components) }}
+    concurrency:
+      group: rebuild-${{ matrix.component }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lowercase repository
+        run: echo "REPOSITORY=$(echo '${{ github.repository_owner }}/sysexts' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build sysext-pkg
+        run: GOTOOLCHAIN=local go build -o ./sysext-pkg ./cmd/sysext-pkg
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List published tags for ${{ matrix.component }}
+        id: tags
+        run: |
+          TAGS=$(./sysext-pkg tags \
+            --registry "$REGISTRY" \
+            --repository "$REPOSITORY" \
+            "${{ matrix.component }}" 2>/dev/null || true)
+          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$TAGS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
+
+      - name: Rebuild published versions of ${{ matrix.component }}
+        if: steps.tags.outputs.tags != ''
+        run: |
+          while IFS= read -r VERSION; do
+            [[ -z "$VERSION" ]] && continue
+            echo "rebuilding ${{ matrix.component }} $VERSION"
+            ./sysext-pkg release \
+              --registry "$REGISTRY" \
+              --repository "$REPOSITORY" \
+              "${{ matrix.component }}" "$VERSION" || true
+          done <<< "${{ steps.tags.outputs.tags }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}

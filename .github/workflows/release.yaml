@@ -91,7 +91,7 @@ jobs:
         id: versions
         run: |
           VERSIONS=$(./sysext-pkg list "${{ matrix.component }}" \
-            --registry "$REGISTRY" --repository "$REPOSITORY" | head -5)
+            --registry "$REGISTRY" --repository "$REPOSITORY")
           echo "versions<<EOF" >> "$GITHUB_OUTPUT"
           echo "$VERSIONS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
