@@ -32,7 +32,7 @@ type OCIConfig struct {
 	// Defaults to "ghcr.io" if empty.
 	Registry string
 
-	// Repository is the image repository path, e.g. "cellebyte/k8s-sysext".
+	// Repository is the image repository path, e.g. "cellebyte/sysexts".
 	Repository string
 
 	// Token is used as the registry password (Bearer token / PAT).
@@ -128,7 +128,7 @@ func PushVariant(ctx context.Context, cfg OCIConfig, rawFile, component, version
 // pushes it under every tag in tags.
 //
 // descriptors are the values returned by PushVariant for each arch.
-// tags is typically []string{"v1.33.1", "v1.33", "latest"}.
+// tags is typically []string{"v1.33.1", "v1.33"}.
 func PushIndex(ctx context.Context, cfg OCIConfig, component string, descriptors []ocispec.Descriptor, tags []string) error {
 	if len(descriptors) == 0 {
 		return fmt.Errorf("no arch descriptors provided")
@@ -181,12 +181,12 @@ func TagExists(ctx context.Context, cfg OCIConfig, component, tag string) (bool,
 }
 
 // IndexTags returns all OCI tags to push for a given version:
-// the immutable full version plus the mutable minor and latest tags.
+// the immutable full version plus the mutable minor tag.
 //
-//	IndexTags("kubernetes", "v1.33.1") → ["v1.33.1", "v1.33", "latest"]
+//	IndexTags("v1.33.1") → ["v1.33.1", "v1.33"]
 func IndexTags(version string) []string {
 	minor := k8sMajorMinor(version) // "v1.33"
-	return []string{version, minor, "latest"}
+	return []string{version, minor}
 }
 
 // isNotFound reports whether err represents an HTTP 404 / not-found response.

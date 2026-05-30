@@ -1,4 +1,4 @@
-module github.com/cellebyte/k8s-sysext
+module github.com/cellebyte/sysext-pkg
 
 go 1.26.3
 

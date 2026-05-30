@@ -9,14 +9,14 @@
 set -euo pipefail
 
 REGISTRY="${OCI_REGISTRY:-ghcr.io}"
-REPOSITORY="${1:-cellebyte/k8s-sysext}"
-BINARY="${BINARY:-./k8s-sysext}"
+REPOSITORY="${1:-cellebyte/sysexts}"
+BINARY="${BINARY:-./sysext-pkg}"
 
 # Ensure the binary exists (build it if not).
 if [[ ! -x "${BINARY}" ]]; then
-  echo "building k8s-sysext…" >&2
+  echo "building sysext-pkg…" >&2
   GOROOT=/home/a108073420/sdk/go1.26.3 GOTOOLCHAIN=local \
-    /home/a108073420/sdk/go1.26.3/bin/go build -o "${BINARY}" ./cmd/k8s-sysext
+    /home/a108073420/sdk/go1.26.3/bin/go build -o "${BINARY}" ./cmd/sysext-pkg
 fi
 
 # Fetch all upstream versions once per component.

@@ -1,4 +1,4 @@
-// Package internal contains all build pipeline logic for k8s-sysext.
+// Package internal contains all build pipeline logic for sysext-pkg.
 package internal
 
 import (

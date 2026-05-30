@@ -1,4 +1,4 @@
-# k8s-sysext
+# sysext-pkg
 
 A Go CLI that builds [systemd-sysext](https://www.freedesktop.org/software/systemd/man/systemd-sysext.html) images for Kubernetes node components and publishes them as multi-arch OCI artifacts to any OCI registry.
 
@@ -72,7 +72,7 @@ Global flags:
 
 ```
 --registry     OCI registry hostname  (default: ghcr.io; env: OCI_REGISTRY)
---repository   OCI repository path    (default: cellebyte/k8s-sysext)
+--repository   OCI repository path    (default: cellebyte/sysexts)
 ```
 
 ## OCI artifact layout
@@ -82,7 +82,6 @@ Each component is a separate OCI repository:
 ```
 ghcr.io/<owner>/sysexts/kubernetes:v1.33.1          ← immutable index
 ghcr.io/<owner>/sysexts/kubernetes:v1.33            ← mutable minor alias
-ghcr.io/<owner>/sysexts/kubernetes:latest           ← mutable latest alias
 ```
 
 Each index contains two manifests (`linux/amd64`, `linux/arm64`).  Each manifest holds a single layer — the raw squashfs `.raw` file.

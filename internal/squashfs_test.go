@@ -12,7 +12,7 @@ import (
 	backendfile "github.com/diskfs/go-diskfs/backend/file"
 	"github.com/diskfs/go-diskfs/filesystem/squashfs"
 
-	"github.com/cellebyte/k8s-sysext/internal"
+	"github.com/cellebyte/sysext-pkg/internal"
 )
 
 // hostArch returns the sysext arch token for the current host.
@@ -90,7 +90,7 @@ func TestCreateSysext_Size(t *testing.T) {
 // usr/lib/extension-release.d/extension-release.<name> file is present and
 // has the correct ID=_any and ARCHITECTURE= fields.
 //
-// The caller (cmd/k8s-sysext) is expected to pass the filename-without-.raw
+// The caller (cmd/sysext-pkg) is expected to pass the filename-without-.raw
 // as name so that systemd-sysext's name-from-filename matching works.
 func TestCreateSysext_ExtensionRelease(t *testing.T) {
 	arch := hostArch(t)

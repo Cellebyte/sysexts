@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cellebyte/k8s-sysext/internal"
+	"github.com/cellebyte/sysext-pkg/internal"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
@@ -141,7 +141,7 @@ func runBuild(ctx context.Context, component, version, arch, outDir, staticFiles
 		return err
 	}
 
-	stagingDir, err := os.MkdirTemp("", "k8s-sysext-*")
+	stagingDir, err := os.MkdirTemp("", "sysext-pkg-*")
 	if err != nil {
 		return fmt.Errorf("create staging dir: %w", err)
 	}
