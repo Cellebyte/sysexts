@@ -46,23 +46,23 @@ opt/cni/bin/      bridge, host-local, flannel, …  (cni-plugins only)
 Requires Go ≥ 1.26.
 
 ```sh
-go build -o k8s-sysext ./cmd/k8s-sysext
+go build -o sysext-pkg ./cmd/sysext-pkg
 ```
 
 ## CLI
 
 ```
-k8s-sysext list [component]
+sysext-pkg list [component]
     Print available upstream versions (newest first).
 
-k8s-sysext build <component> <version> <arch>
+sysext-pkg build <component> <version> <arch>
     Download binaries, overlay static files, and write <component>-<version>-<arch>.raw.
     arch: amd64 | arm64
 
-k8s-sysext push <component> <version> <arch>
+sysext-pkg push <component> <version> <arch>
     Push a pre-built .raw to the registry, tagged <version>-<arch>.
 
-k8s-sysext release <component> <version>
+sysext-pkg release <component> <version>
     Full pipeline: build amd64 + arm64, push both, publish multi-arch OCI index.
     --skip-existing   skip if the version tag already exists
     --arches          comma-separated list (default: amd64,arm64)
@@ -80,9 +80,9 @@ Global flags:
 Each component is a separate OCI repository:
 
 ```
-ghcr.io/<owner>/k8s-sysext/kubernetes:v1.33.1          ← immutable index
-ghcr.io/<owner>/k8s-sysext/kubernetes:v1.33            ← mutable minor alias
-ghcr.io/<owner>/k8s-sysext/kubernetes:latest           ← mutable latest alias
+ghcr.io/<owner>/sysexts/kubernetes:v1.33.1          ← immutable index
+ghcr.io/<owner>/sysexts/kubernetes:v1.33            ← mutable minor alias
+ghcr.io/<owner>/sysexts/kubernetes:latest           ← mutable latest alias
 ```
 
 Each index contains two manifests (`linux/amd64`, `linux/arm64`).  Each manifest holds a single layer — the raw squashfs `.raw` file.

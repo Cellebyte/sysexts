@@ -43,14 +43,14 @@ func rootCmd() *cobra.Command {
 	gf := &globalFlags{}
 
 	root := &cobra.Command{
-		Use:   "k8s-sysext",
+		Use:   "sysext-pkg",
 		Short: "Build and publish systemd-sysext images for Kubernetes node components",
 	}
 
 	root.PersistentFlags().StringVar(&gf.registry, "registry", "",
 		`OCI registry hostname (default "ghcr.io"; overrides OCI_REGISTRY env)`)
-	root.PersistentFlags().StringVar(&gf.repository, "repository", "cellebyte/k8s-sysext",
-		"OCI repository path (e.g. cellebyte/k8s-sysext)")
+	root.PersistentFlags().StringVar(&gf.repository, "repository", "cellebyte/sysexts",
+		"OCI repository path (e.g. cellebyte/sysexts)")
 
 	root.AddCommand(
 		listCmd(),
