@@ -19,7 +19,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY: ${{ github.repository_owner }}/k8s-sysext
   GO_VERSION: "1.26.3"
 
 jobs:
@@ -29,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set lowercase repository
+        run: echo "REPOSITORY=$(echo '${{ github.repository_owner }}/k8s-sysext' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
@@ -55,7 +57,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY: ${{ env.REGISTRY }}
-          REPOSITORY: ${{ env.REPOSITORY }}
 
   # ── scheduled: release all components with new upstream versions ──────────
   release-all:
@@ -67,6 +68,9 @@ jobs:
         component: [kubernetes, eksd, containerd, crio, k3s, cni-plugins]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set lowercase repository
+        run: echo "REPOSITORY=$(echo '${{ github.repository_owner }}/k8s-sysext' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
@@ -93,7 +97,6 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
         env:
           REGISTRY: ${{ env.REGISTRY }}
-          REPOSITORY: ${{ env.REPOSITORY }}
 
       - name: Release new versions
         run: |
@@ -109,4 +112,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY: ${{ env.REGISTRY }}
-          REPOSITORY: ${{ env.REPOSITORY }}
